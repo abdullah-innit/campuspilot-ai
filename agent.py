@@ -58,7 +58,11 @@ Announcement:
         return None
     raw = raw.replace("```json", "").replace("```", "").strip()
     try:
-        return json.loads(raw)
+        parsed = json.loads(raw)
+        title = parsed.get("title")
+        if not title or str(title).strip().lower() in ("null", "none", "n/a", ""):
+            return None
+        return parsed
     except json.JSONDecodeError:
         return None
 
