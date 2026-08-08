@@ -57,6 +57,7 @@ Both run through a single `on_message` handler, as required by caspian-sdk's one
 1. `pip install caspian-sdk python-dotenv openai`
 2. Create a `.env` file:
 
+```env
 CASPIAN_API_KEY=your_key
 CASPIAN_BASE_URL=https://api.trycaspianai.com
 FEATHERLESS_API_KEY=your_key
