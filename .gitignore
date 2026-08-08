@@ -5,3 +5,5 @@ __pycache__/
 deadlines.json
 notes.json
 last_discord.json
+attendance.json
+attendance_threshold.json

@@ -1,3 +1,5 @@
+import threading
+import time
 import os
 import json
 from datetime import datetime
@@ -25,6 +27,9 @@ print("Discord connected:", discord["status"])
 memory = {}
 DEADLINES_FILE = "deadlines.json"
 NOTES_FILE = "notes.json"
+ATTENDANCE_FILE = "attendance.json"
+THRESHOLD_FILE = "attendance_threshold.json"
+DEFAULT_THRESHOLD = 75
 
 def load_json(path, default):
     if os.path.exists(path):
@@ -35,6 +40,16 @@ def load_json(path, default):
 def save_json(path, data):
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
+
+def get_threshold(course):
+    data = load_json(THRESHOLD_FILE, {})
+    return data.get(course, data.get("_default", DEFAULT_THRESHOLD))
+
+def set_threshold(value, course=None):
+    data = load_json(THRESHOLD_FILE, {})
+    key = course if course else "_default"
+    data[key] = value
+    save_json(THRESHOLD_FILE, data)
 
 def ai_call(messages, fallback="Sorry, I hit a technical issue processing that. Try again in a moment."):
     try:
@@ -99,6 +114,81 @@ Notes:
     return ai_call([{"role": "user", "content": prompt}],
                     fallback="Sorry, I couldn't generate a quiz right now — try again shortly.")
 
+REMINDER_TIERS = [(3, "3-day"), (1, "1-day"), (0, "due-today")]
+
+def check_reminders():
+    while True:
+        try:
+            deadlines = load_json(DEADLINES_FILE, [])
+            last_discord = load_json(LAST_DISCORD_FILE, {})
+            convo_id = last_discord.get("conversation_id")
+            updated = False
+
+            if convo_id:
+                today = datetime.now().date()
+                for d in deadlines:
+                    due_str = d.get("due_date")
+                    if not due_str:
+                        continue
+                    try:
+                        due_date = datetime.strptime(due_str, "%Y-%m-%d").date()
+                    except ValueError:
+                        continue
+
+                    days_left = (due_date - today).days
+                    sent = d.setdefault("reminders_sent", [])
+
+                    for threshold, tag in REMINDER_TIERS:
+                        if days_left == threshold and tag not in sent:
+                            when = "today" if threshold == 0 else f"in {threshold} day(s)"
+                            reminder_text = (
+                                f"Reminder: {d['title']} "
+                                f"({d.get('course') or 'course not specified'}) "
+                                f"is due {when} — worth {d.get('weight_percent') or 'unspecified'}%."
+                            )
+                            try:
+                                client.send_message(convo_id, text=reminder_text)
+                                sent.append(tag)
+                                updated = True
+                            except Exception as e:
+                                print("REMINDER SEND ERROR:", e)
+
+            if updated:
+                save_json(DEADLINES_FILE, deadlines)
+        except Exception as e:
+            print("REMINDER LOOP ERROR:", e)
+
+        time.sleep(1800)  # check every 30 minutes
+
+def record_attendance(course, status):
+    data = load_json(ATTENDANCE_FILE, {})
+    entry = data.setdefault(course, {"present": 0, "absent": 0})
+    entry["present" if status == "present" else "absent"] += 1
+    save_json(ATTENDANCE_FILE, data)
+    return entry
+
+def attendance_percent(entry):
+    total = entry["present"] + entry["absent"]
+    return 100.0 if total == 0 else (entry["present"] / total) * 100
+
+def attendance_buffer(entry, threshold):
+    p, a = entry["present"], entry["absent"]
+    t = threshold / 100
+    max_total_absences = (p / t) - p
+    return int(max_total_absences - a)
+
+def attendance_report_line(course, entry):
+    threshold = get_threshold(course)
+    pct = attendance_percent(entry)
+    buffer = attendance_buffer(entry, threshold)
+    status = "OK" if pct >= threshold else "AT RISK"
+    line = f"{course}: {pct:.1f}% ({entry['present']} present / {entry['absent']} absent) — {status} (threshold: {threshold}%)"
+    if pct >= threshold:
+        line += f"\n   Can miss {max(buffer, 0)} more before dropping below {threshold}%."
+    else:
+        line += f"\n   Below the {threshold}% threshold — attend consistently to recover."
+    return line
+
 @client.on_message
 def handle(message):
     text = (message.text or "").strip()
@@ -139,6 +229,54 @@ def handle(message):
         message.typing()
         quiz = generate_quiz(matched, notes[matched])
         message.reply(quiz)
+        return
+
+# --- Set attendance threshold: "set attendance threshold: 80" or "set attendance threshold: OOP 80" ---
+    if lower.startswith("set attendance threshold"):
+        rest = text.split(":", 1)[-1].strip()
+        parts = rest.rsplit(" ", 1)
+        try:
+            if len(parts) == 2 and parts[1].replace(".", "").isdigit():
+                course, value = parts[0].strip(), float(parts[1])
+                set_threshold(value, course)
+                message.reply(f"Set attendance threshold for {course} to {value}%.")
+            elif rest.replace(".", "").isdigit():
+                set_threshold(float(rest))
+                message.reply(f"Set default attendance threshold to {rest}%.")
+            else:
+                raise ValueError
+        except ValueError:
+            message.reply("Format:\nset attendance threshold: 80\nor per-course:\nset attendance threshold: OOP 80")
+        return
+
+    # --- Attendance logging ---
+    if lower.startswith("attendance:"):
+        rest = text.split(":", 1)[1].strip()
+        parts = rest.rsplit(" ", 1)
+        if len(parts) != 2 or parts[1].lower() not in ("present", "absent"):
+            message.reply("Format:\nattendance: <Course Name> present\nor\nattendance: <Course Name> absent")
+            return
+        course, status = parts[0].strip(), parts[1].lower()
+        entry = record_attendance(course, status)
+        threshold = get_threshold(course)
+        pct = attendance_percent(entry)
+        buffer = attendance_buffer(entry, threshold)
+        reply = f"Logged {status} for {course}. Current attendance: {pct:.1f}% (threshold: {threshold}%)."
+        if pct < threshold:
+            reply += "\nBelow threshold — this could risk exam eligibility."
+        elif buffer <= 2:
+            reply += f"\nHeads up — you can only miss {max(buffer, 0)} more before dropping below {threshold}%."
+        message.reply(reply)
+        return
+
+    # --- Attendance summary: "attendance status" / "my attendance" ---
+    if lower in ("attendance status", "my attendance", "attendance"):
+        data = load_json(ATTENDANCE_FILE, {})
+        if not data:
+            message.reply("No attendance logged yet. Use: attendance: <Course Name> present/absent")
+            return
+        lines = [attendance_report_line(c, e) for c, e in data.items()]
+        message.reply("Attendance summary:\n\n" + "\n\n".join(lines))
         return
 
     # --- Email: deadline / urgent-change detection ---
@@ -196,5 +334,6 @@ def handle(message):
     history.append({"role": "assistant", "content": answer})
     memory[message.conversation_id] = history
     message.reply(answer)
+threading.Thread(target=check_reminders, daemon=True).start()    
 print("CampusPilot is live. Listening for messages...")
 client.listen()
