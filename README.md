@@ -14,17 +14,20 @@ CampusPilot uses real tool-calling, the AI model itself decides which action to 
 flowchart LR
     A[Email] --> H
     B[Discord] --> H
-    H[on_message handler] --> C{What kind of message?}
-    C -->|Announcement| D[Extract deadline + weight]
-    C -->|Notes paste| E[Save notes by course]
-    C -->|Quiz request| F[Generate MCQ + short-answer quiz]
-    C -->|Attendance log| G[Update attendance %]
-    D --> I[Featherless AI]
-    E --> I
-    F --> I
-    I --> J[Reply on source channel]
-    D -->|If urgent| K[Proactive Discord alert]
-    L[Background reminder loop] -->|Deadline approaching| K
+    H[on_message handler] --> I[Featherless AI + tool-calling]
+    I -->|decides to call| T1[log_deadline]
+    I -->|decides to call| T2[save_notes]
+    I -->|decides to call| T3[generate_quiz]
+    I -->|decides to call| T4[log_attendance]
+    I -->|decides to call| T5[attendance_status]
+    I -->|no tool needed| R[Reply directly]
+    T1 --> J[Reply on source channel]
+    T2 --> J
+    T3 --> J
+    T4 --> J
+    T5 --> J
+    T1 -->|if urgent| K[Proactive Discord alert]
+    L[Background reminder loop] -->|deadline approaching| K
 ```
 
 ## Features
