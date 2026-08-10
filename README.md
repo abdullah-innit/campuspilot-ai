@@ -1,6 +1,6 @@
 # CampusPilot AI
 
-An autonomous university assistant that reads your emails, tracks deadlines by grade impact, generates quizzes from your notes, watches your attendance, and proactively alerts you across channels — built with [caspian-sdk](https://github.com/TryCaspian/caspian-sdk) and Featherless.ai.
+An autonomous university assistant that reads your emails, tracks deadlines by grade impact, generates quizzes from your notes, watches your attendance, and proactively alerts you across channels. It is built with [caspian-sdk](https://github.com/TryCaspian/caspian-sdk) and Featherless.ai.
 
 Built for the 15-Day AI Agent Hackathon by Caspian.
 
