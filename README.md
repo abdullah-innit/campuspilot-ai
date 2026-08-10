@@ -42,7 +42,7 @@ flowchart LR
 | Attendance summary | *"what's my attendance looking like"* | Shows attendance across all logged courses |
 | Custom attendance threshold | *"set my attendance threshold to 80%"* or *"my Physics threshold is 65%"* | Sets your own policy instead of an imposed default |
 
-No fixed command syntax required, CampusPilot uses real tool-calling, so it understands natural phrasing and picks the right action itself.
+No fixed command syntax required, CampusPilot uses real tool calling, so it understands natural phrasing and picks the right action itself.
 
 ## Channels
 
