@@ -9,7 +9,7 @@ Built for the 15-Day AI Agent Hackathon by Caspian.
 ![Featherless.ai](https://img.shields.io/badge/inference-Featherless.ai-purple)
 
 ## How it works
-
+CampusPilot uses real tool-calling — the AI model itself decides which action to take from natural language (log a deadline, save notes, generate a quiz, track attendance) rather than matching fixed command phrases.
 ```mermaid
 flowchart LR
     A[Email] --> H
@@ -67,7 +67,6 @@ DISCORD_BOT_TOKEN=your_key
 
 ## Known limitations
 
-- Commands require exact phrasing (e.g. `quiz me on <course>`) — no fuzzy matching yet
 - File attachments (PDFs, images) aren't supported — notes must be pasted as text (caspian-sdk's message object doesn't currently expose attachments)
 - Proactive alerts require you to have messaged the bot at least once first, so it knows which conversation to reach
 - Reminder scheduling uses date precision (day-level), not exact time, since source emails rarely state an hour
