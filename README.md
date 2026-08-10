@@ -9,7 +9,7 @@ Built for the 15-Day AI Agent Hackathon by Caspian.
 ![Featherless.ai](https://img.shields.io/badge/inference-Featherless.ai-purple)
 
 ## How it works
-CampusPilot uses real tool-calling — the AI model itself decides which action to take from natural language (log a deadline, save notes, generate a quiz, track attendance) rather than matching fixed command phrases.
+CampusPilot uses real tool-calling, the AI model itself decides which action to take from natural language (log a deadline, save notes, generate a quiz, track attendance) rather than matching fixed command phrases.
 ```mermaid
 flowchart LR
     A[Email] --> H
@@ -27,17 +27,19 @@ flowchart LR
     L[Background reminder loop] -->|Deadline approaching| K
 ```
 
-## Features & commands
+## Features
 
-| Feature | How to use it | What it does |
+| Feature | Example | What it does |
 |---|---|---|
-| Deadline logging | Forward/send any course email | Extracts title, due date, and grade weight; flags priority |
-| Urgent alerts | *(automatic)* | If an email signals a cancellation or moved deadline, proactively pings Discord — unprompted |
+| Deadline logging | Forward any course email, or just say *"my OOP assignment is due next Friday, worth 10%"* | Extracts title, due date, and grade weight; flags priority |
+| Urgent alerts | *(automatic)* | If a message signals a cancellation or moved deadline, proactively pings Discord — unprompted |
 | Scheduled reminders | *(automatic)* | Pings you 3 days, 1 day, and the day a deadline is due |
-| Quiz generation | `NOTES: <Course Name>` then paste notes, then `quiz me on <Course Name>` | Generates 3 MCQs + 2 short-answer questions with an answer key |
-| Attendance tracking | `attendance: <Course Name> present` / `absent` | Tracks running attendance %, warns before you risk exam eligibility |
-| Attendance summary | `attendance status` | Shows attendance across all logged courses |
-| Custom attendance threshold | `set attendance threshold: 80` or `set attendance threshold: <Course Name> 80` | Sets your own policy instead of an imposed default |
+| Quiz generation | *"here's my Discrete Structures notes: [paste]"* then *"quiz me on Discrete Structures"* | Generates 3 MCQs + 2 short-answer questions with an answer key |
+| Attendance tracking | *"I was in Applied Physics today"* or *"I missed OOP lab"* | Tracks running attendance %, warns before you risk exam eligibility |
+| Attendance summary | *"what's my attendance looking like"* | Shows attendance across all logged courses |
+| Custom attendance threshold | *"set my attendance threshold to 80%"* or *"my Physics threshold is 65%"* | Sets your own policy instead of an imposed default |
+
+No fixed command syntax required, CampusPilot uses real tool-calling, so it understands natural phrasing and picks the right action itself.
 
 ## Channels
 
@@ -67,9 +69,9 @@ DISCORD_BOT_TOKEN=your_key
 
 ## Known limitations
 
-- File attachments (PDFs, images) aren't supported — notes must be pasted as text (caspian-sdk's message object doesn't currently expose attachments)
-- Proactive alerts require you to have messaged the bot at least once first, so it knows which conversation to reach
-- Reminder scheduling uses date precision (day-level), not exact time, since source emails rarely state an hour
+i. File attachments (PDFs, images) aren't supported. The notes must be pasted as text (caspian-sdk's message object doesn't currently expose attachments)
+ii. Proactive alerts require you to have messaged the bot at least once first, so it knows which conversation to reach
+iii. Reminder scheduling uses date precision (day-level), not exact time, since source emails rarely state an hour
 
 ## Built by
 
