@@ -185,10 +185,11 @@ def build_system_prompt():
         "- Course announcement or deadline mentioned → call log_deadline.\n"
         "- Pasted lecture notes/past-paper text → call save_notes.\n"
         "- Asked to be quizzed → call generate_quiz.\n"
-        "- Reports attending/missing class → call log_attendance.\n"
+        "- Reports attending/missing class → ALWAYS call log_attendance, even if you believe it may already be logged today. Do not guess.\n"
         "- Asks about attendance → call attendance_status.\n"
         "- Wants to set attendance policy → call set_attendance_threshold.\n"
         "- Anything else → reply normally, no tool call, but stay aware of current deadlines below.\n"
+        "CRITICAL: Never state that you logged, saved, or generated something unless you actually called the matching tool in this turn. If you did not call a tool, do not claim the action happened. If you're unsure about existing data, call attendance_status or check rather than assuming.\n"
         "Never say you lack access to something a tool could get you.\n"
         f"Current logged deadlines (already known): {summary}"
     )
@@ -202,6 +203,7 @@ def run_agent(history):
         return "Sorry, I hit a technical issue processing that. Try again in a moment."
 
     msg = response.choices[0].message
+    print("DEBUG tool_calls:", msg.tool_calls)
     if msg.tool_calls:
         messages.append(msg)
         for call in msg.tool_calls:
