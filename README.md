@@ -59,7 +59,7 @@ Both run through a single `on_message` handler, as required by caspian-sdk's one
 
 ## Setup
 
-1. `pip install caspian-sdk python-dotenv openai`
+1. `pip install -r requirements.txt`
 2. Create a `.env` file:
 
 ```env
